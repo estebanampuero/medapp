@@ -1,392 +1,457 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LockedInWork - La Nueva Era de Automatización Inteligente</title>
-    <meta name="description" content="Agentes de IA conversacionales + Automatización de procesos en una sola plataforma. Combinamos lo mejor de la IA y la automatización en una experiencia única.">
+    <title>Dashboard de Reservas</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="LIW" />
-    <link rel="manifest" href="/site.webmanifest" />
-
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F9FAFB;
-            color: #11182A;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
-        }
-        .text-subtitle { color: #4B5563; }
-        .gradient-text {
-            background: linear-gradient(90deg, #4F46E5, #7C3AED, #DB2777);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-fill-color: transparent;
-        }
-        .faq-question { cursor: pointer; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .day-selected { background-color: #4f46e5 !important; color: white !important; font-weight: bold; }
+        .slot-selected { background-color: #818cf8; color: white; transform: scale(1.05); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
         
-        /* CSS del FAQ Corregido */
-        .faq-answer {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out;
-        }
-        
-        .faq-item.active .icon-plus { transform: rotate(45deg); }
-        .icon-plus { transition: transform 0.3s ease; }
+        /* --- ESTILOS INTEGRADOs --- */
+        .slot-occupied-wrapper { background-color: #e2e8f0; color: #475569; padding: 0.5rem; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; line-height: 1.25rem; min-height: 40px; }
+        .delete-btn { background: #fecaca; color: #b91c1c; border-radius: 9999px; width: 1.75rem; height: 1.75rem; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; border: none; cursor: pointer; transition: all 0.2s; flex-shrink: 0; margin-left: 0.5rem; }
+        .delete-btn:hover { background: #ef4444; color: white; transform: scale(1.1); }
+        .box-column { flex: 0 0 160px; /* Ancho ajustado para mejor visualización */ }
+        /* --- FIN ESTILOS INTEGRADOS --- */
 
-        /* CSS del Logo Scroller */
-        .logo-scroller {
-            overflow: hidden;
-            position: relative;
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-        .scroller-inner {
-            display: flex;
-            width: max-content;
-            animation: scroll 40s linear infinite;
-        }
-        @keyframes scroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
-        .logo-scroller:hover .scroller-inner { animation-play-state: paused; }
-        .logo-item { padding: 0 2.5rem; }
-
-        /* ===== INICIO DE LA CORRECCIÓN ===== */
-        #typing-effect {
-            display: inline-block;
-            min-height: 2.6em; /* Reserva espacio para aprox. 2 líneas */
-            vertical-align: bottom; /* Alinea el texto en la parte inferior para evitar saltos */
-        }
-        /* ===== FIN DE LA CORRECCIÓN ===== */
+        #time-slots-wrapper { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
+        @media (min-width: 640px) { #time-slots-wrapper { gap: 1.5rem; } }
+        .box-column { display: flex; flex-direction: column; gap: 0.5rem; }
+        .box-title { font-weight: 600; color: #334155; text-align: center; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 0.5rem; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: #f1f5f9; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased text-slate-700">
 
-    <!-- ===== HEADER ===== -->
-    <header id="main-header" class="w-full bg-white/80 backdrop-blur-lg z-50 sticky top-0 border-b border-gray-200/80 relative">
-        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <!-- INICIO DE LA MODIFICACIÓN: Añadir este div contenedor -->
-            <div class="flex items-center gap-x-8">
-                <a href="index.html" class="text-2xl font-bold text-gray-900">LockedIn<span class="text-indigo-600">Work</span></a>
-                <nav class="hidden md:flex items-center space-x-2 text-gray-800 font-medium">
-                    <!-- <a href="products.html" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">Productos</a> -->
-                    <a href="solutions.html" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">Soluciones</a>
-                    <!-- <a href="experiences.html" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">Experiencias</a> -->
-                    <a href="pricing.html" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">Precios</a>
-                    <!-- <a href="company.html" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">Empresa</a> -->
-                </nav>
-            </div>
-            <!-- FIN DE LA MODIFICACIÓN -->
-            
-            <div class="hidden md:flex items-center space-x-3">
-                <!-- ... tus botones de la derecha ... -->
-            </div>
-            <button id="mobile-menu-button" class="md:hidden text-gray-800">...</button>
+    <a href="https://lockedinwork.com" target="_blank" rel="noopener noreferrer" class="fixed top-4 right-4 z-[60] text-lg font-bold text-slate-800 opacity-40 hover:opacity-100 transition-opacity duration-300">
+        LockedIn<span class="text-indigo-600">Work</span>
+    </a>
+
+    <div id="login-overlay" class="fixed inset-0 bg-slate-100 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-white p-8 rounded-xl shadow-2xl fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 text-center mb-2">Acceso Restringido</h2>
+            <p class="text-center text-slate-500 mb-6">Ingresa tus credenciales para continuar.</p>
+            <form id="login-form">
+                <div class="mb-4"><label for="username" class="block text-sm font-medium text-slate-600 mb-1">Usuario</label><input type="text" id="username" name="username" required class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"></div>
+                <div class="mb-6"><label for="password" class="block text-sm font-medium text-slate-600 mb-1">Contraseña</label><input type="password" id="password" name="password" required class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"></div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300">Ingresar</button>
+                <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden">Usuario o contraseña incorrectos.</p>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-content" style="display: none;" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl pb-24 sm:pb-8">
+        
+        <header class="mb-8"><h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Agendar y Gestionar Horas</h1><p class="text-slate-500 mt-1">Selecciona, reserva o elimina bloques horarios.</p></header>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 sm:p-6 bg-white rounded-lg shadow-md">
+            <div><label for="cae-select" class="block text-sm font-medium text-slate-600 mb-1">CAE</label><select id="cae-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"><option value="">Cargando...</option></select></div>
+            <div><label for="box-select" class="block text-sm font-medium text-slate-600 mb-1">BOX (Filtro)</label><select id="box-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" disabled><option value="">Selecciona un CAE</option></select></div>
+            <div><label for="medico-select" class="block text-sm font-medium text-slate-600 mb-1">MÉDICO</label><select id="medico-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" disabled><option value="">Cargando...</option></select><input type="text" id="otro-medico-input" placeholder="Nombre del nuevo médico" class="w-full p-2 border border-slate-300 rounded-lg mt-2 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition hidden"></div>
         </div>
         
-        <!-- PANEL DEL MENÚ MÓVIL -->
-        <div id="mobile-menu-panel" class="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-40">
-            <div class="flex flex-col p-4 space-y-2">
-                <!-- <a href="products.html" class="px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-800 font-medium">Productos</a> -->
-                <a href="solutions.html" class="px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-800 font-medium">Soluciones</a>
-                <!--<a href="experiences.html" class="px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-800 font-medium">Experiencias</a> -->
-                <a href="pricing.html" class="px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-800 font-medium">Precios</a>
-                <!--<a href="company.html" class="px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-800 font-medium">Empresa</a> -->
-                <div class="border-t border-gray-200 mt-4 pt-4 flex flex-col space-y-3">
-                    <a href="https://calendly.com/carlos-lockedinwork/30min"  target="_blank" rel="noopener noreferrer" class="w-full text-center text-gray-700 bg-white font-semibold px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">Hablemos</a>
-                    <!--<a href="#login" class="w-full text-center bg-indigo-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition-colors">Iniciar Sesión</a>-->
-                </div>
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            <div class="xl:col-span-2 bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                <div id="calendar-header" class="flex items-center justify-between mb-4"><button id="prev-month" class="p-2 rounded-full hover:bg-slate-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h2 id="month-year" class="text-lg sm:text-xl font-semibold text-slate-800"></h2><button id="next-month" class="p-2 rounded-full hover:bg-slate-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center"></div>
             </div>
+            <div class="xl:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-md fade-in" id="time-slots-container-wrapper"><h3 class="text-lg sm:text-xl font-semibold text-slate-800 mb-1">Horarios Disponibles</h3><p id="selected-day-text" class="text-slate-500 mb-4 text-sm sm:text-base">Selecciona un CAE y un día en el calendario</p><div id="time-slots-wrapper" class="max-h-96 pr-2"></div></div>
         </div>
-    </header>
-
-
-    <main>
-        <!-- ===== HERO SECTION ===== -->
-        <section class="py-20 md:py-32">
-            <div class="container mx-auto px-6 text-center">
-                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-tight">
-                    La nueva era de <br>
-                    <span id="typing-effect" class="gradient-text">automatización inteligente.</span>
-                </h1>
-                <p class="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-subtitle">
-                    Agentes de IA conversacionales, automatización de procesos y análisis de datos en una sola plataforma.
-                </p>
-                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <a href="https://wa.me//56951430344?text=¡Hola!%20Estoy%20interesado%20en%20ver%20cómo%20la%20IA%20puede%20ayudar%20a%20mi%20empresa%20"  target="_blank" class="bg-indigo-600 text-white font-semibold px-8 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/20">
-                        Prueba nuestra IA
-                    </a>
-                    <a href="https://calendly.com/carlos-lockedinwork/30min"  target="_blank" rel="noopener noreferrer" class="bg-white text-gray-800 font-semibold px-8 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-300">
-                        Agenda tu Demo
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- ===== LOGO MARQUEE (CORREGIDO Y AMPLIADO) ===== -->
-        <section class="pb-16">
-            <div class="container mx-auto px-6">
-                <p class="text-center text-sm font-bold text-gray-500 uppercase tracking-widest">INTEGRADO CON LAS HERRAMIENTAS QUE YA USAS</p>
-                <div class="logo-scroller mt-10">
-                    <div class="scroller-inner">
-                        <!-- Grupo de logos original -->
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" alt="Slack" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg" alt="Salesforce" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/zapier.svg" alt="Zapier" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/hubspot.svg" alt="Hubspot" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> <!-- YA ESTABA CORRECTO -->
-                        <!--<div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> -->
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/b/be/Facebook_Messenger_logo_2020.svg" alt="Facebook Messenger" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg" alt="Microsoft Teams" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> <!-- CORREGIDO -->
-                    
-                        <!-- Grupo de logos duplicado para el efecto infinito -->
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" alt="Slack" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg" alt="Salesforce" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/zapier.svg" alt="Zapier" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/hubspot.svg" alt="Hubspot" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> <!-- YA ESTABA CORRECTO -->
-                        <!--<div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> -->
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/b/be/Facebook_Messenger_logo_2020.svg" alt="Facebook Messenger" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div>
-                        <div class="logo-item"><img src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg" alt="Microsoft Teams" class="h-8 w-auto grayscale opacity-60 hover:opacity-100 transition"></div> <!-- CORREGIDO -->
-                    </div>
-                </div>
-            </div>
-        </section>
         
-        <!-- ===== BENEFICIOS ===== -->
-        <section id="benefits" class="py-24 bg-white">
-            <div class="container mx-auto px-6 text-center">
-                <p class="font-bold text-indigo-600 uppercase tracking-widest">TODO EN UN SOLO LUGAR</p>
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mt-3">Una plataforma, infinitas posibilidades</h2>
-                 <p class="mt-4 max-w-2xl mx-auto text-lg text-subtitle">Queremos que todo sea más fácil, simplifica la vida de tu equipo y olvídate de estar manejando varias aplicaciones.</p>
-                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300/50 hover:-translate-y-1">
-                        <div class="bg-indigo-100 text-indigo-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
-                        <h3 class="mt-5 text-xl font-bold">Conversación Natural</h3>
-                        <p class="mt-2 text-subtitle text-sm">Agentes IA que entienden, razonan y responden con la fluidez de un humano a tus clientes, o a tu equipo.</p>
-                    </div>
-                    <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300/50 hover:-translate-y-1">
-                        <div class="bg-indigo-100 text-indigo-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
-                        <h3 class="mt-5 text-xl font-bold">Transparencia y Seguridad</h3>
-                        <p class="mt-2 text-subtitle text-sm">Control total sobre los datos y procesos, con explicaciones claras en cada paso y acceso perfilado en tu equipo a los datos.</p>
-                    </div>
-                    <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300/50 hover:-translate-y-1">
-                        <div class="bg-indigo-100 text-indigo-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3M5.636 5.636l-1.414-1.414M19.778 5.636l-1.414 1.414M18.364 18.364l1.414 1.414M4.222 18.364l1.414-1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
-                        <h3 class="mt-5 text-xl font-bold">Multicanal e Integración</h3>
-                        <p class="mt-2 text-subtitle text-sm">Conecta con tus herramientas y canales (Web, WhatsApp, Slack, Mail) en un solo lugar.</p>
-                    </div>
-                    <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-indigo-300/50 hover:-translate-y-1">
-                        <div class="bg-indigo-100 text-indigo-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
-                        <h3 class="mt-5 text-xl font-bold">Automatización y Datos</h3>
-                        <p class="mt-2 text-subtitle text-sm">No es solo automatizar: Recibe informes con lo más relevante y alertas cuando instantaneas al detectar problemas.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- ===== DEMO INTERACTIVA ===== -->
-        <section id="demo" class="py-24">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <p class="font-bold text-indigo-600 uppercase tracking-widest">IA EN ACCIÓN</p>
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mt-3">Experimenta el poder en directo</h2>
-                    <p class="mt-4 max-w-2xl mx-auto text-lg text-subtitle">Solo deberás pedir las cosas de forma natural</p>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                    <div class="bg-white border border-gray-200 rounded-2xl p-6 h-full flex flex-col shadow-lg">
-                        <div class="flex items-center mb-4">
-                            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">AI</div>
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-900">Fran - AI Agent</p>
-                                <p class="text-sm text-green-600">● Online</p>
-                            </div>
-                        </div>
-                        <div class="flex-grow space-y-4 overflow-y-auto pr-2">
-                            <div class="flex justify-end"><div class="bg-indigo-600 text-white rounded-lg p-3 max-w-xs"><p class="text-sm">Quiero generar un reporte de ventas del último trimestre para el equipo de EMEA.</p></div></div>
-                            <div class="flex justify-start"><div class="bg-gray-100 rounded-lg p-3 max-w-md"><p class="text-sm text-gray-800">¡Entendido! Estoy accediendo a Salesforce y Google Sheets. ¿Quieres que lo envíe por email al grupo 'EMEA-Sales' cuando esté listo?</p></div></div>
-                            <div class="flex justify-end"><div class="bg-indigo-600 text-white rounded-lg p-3 max-w-xs"><p class="text-sm">Sí, perfecto. Gracias.</p></div></div>
-                            <div class="flex justify-start"><div class="bg-gray-100 rounded-lg p-3 max-w-xs"><p class="text-sm text-gray-800">Reporte enviado, avísame si puedo ayudarte en algo más</p></div></div>
-                        </div>
-                        <div class="mt-6 flex items-center bg-gray-100 rounded-lg p-1">
-                            <input type="text" placeholder="Tu mensaje..." class="bg-transparent w-full focus:outline-none text-gray-500 px-3 text-sm" disabled>
-                            <button class="bg-indigo-600 p-2 rounded-md hover:bg-indigo-700 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></button>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-gray-200 rounded-2xl p-8 h-full shadow-lg">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">La IA ejecutará el flujo</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg border border-gray-200"><div class="bg-indigo-100 p-2 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="ml-4 text-gray-800 font-medium">1. Recibir Petición (Chat)</span></div>
-                            <div class="h-8 border-l-2 border-dashed border-gray-300 ml-7"></div>
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg border border-gray-200"><div class="bg-indigo-100 p-2 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div><span class="ml-4 text-gray-800 font-medium">2. Extraer Datos (Salesforce API)</span></div>
-                            <div class="h-8 border-l-2 border-dashed border-gray-300 ml-7"></div>
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg border border-gray-200"><div class="bg-indigo-100 p-2 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div><span class="ml-4 text-gray-800 font-medium">3. Generar Gráficos (Sheets)</span></div>
-                            <div class="h-8 border-l-2 border-dashed border-gray-300 ml-7"></div>
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg border border-gray-200"><div class="bg-indigo-100 p-2 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div><span class="ml-4 text-gray-800 font-medium">4. Enviar Reporte (Email)</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-      
-        <!-- ===== FAQs ===== -->
-        <section id="faq" class="py-24">
-            <div class="container mx-auto px-6">
-                <div class="grid md:grid-cols-12 gap-8 items-start">
-                    <div class="md:col-span-4 text-center md:text-left">
-                        <p class="font-bold text-indigo-600 uppercase tracking-widest">RESOLVEMOS TUS DUDAS</p>
-                        <h2 class="text-4xl font-bold text-gray-900 mt-3">Preguntas Frecuentes</h2>
-                    </div>
-                    <div class="md:col-span-8 space-y-4" id="faq-container">
-                        <!-- Las preguntas se generan con JS -->
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-    
-    <!-- ===== FOOTER ===== -->
-    <footer class="bg-white pt-24 pb-12 border-t border-gray-200">
-        <div class="container mx-auto px-6">
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-8">
-                <div class="col-span-2 mb-8 md:mb-0">
-                    <a href="#" class="text-2xl font-bold text-gray-900">LockedIn<span class="text-indigo-600">Work</span></a>
-                    <p class="mt-4 text-sm text-gray-500 max-w-xs">Dedícate a lo que hace la diferencia, déjale el resto a la IA.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-900">Producto</h4>
-                    <ul class="mt-4 space-y-3 text-subtitle">
-                        <li><a href="solutions.html" class="hover:text-indigo-600 transition-colors">Soluciones</a></li>
-                        <!-- <li><a href="#" class="hover:text-indigo-600 transition-colors">Integraciones</a></li> -->
-                        <li><a href="pricing.html" class="hover:text-indigo-600 transition-colors">Precios</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-900">Empresa</h4>
-                    <ul class="mt-4 space-y-3 text-subtitle">
-                        <!--<li><a href="#" class="hover:text-indigo-600 transition-colors">Sobre nosotros</a></li> -->
-                        <li><a href="https://wa.me//56997795188?text=¡Hola!%20Estoy%20interesado%20en%20ver%20cómo%20la%20IA%20puede%20ayudar%20a%20mi%20empresa%20" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 transition-colors">Contacto</a></li>
-                    </ul>
-                </div>
-                <!-- <div>
-                    <h4 class="font-bold text-gray-900">Recursos</h4>
-                    <ul class="mt-4 space-y-3 text-subtitle">
-                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Documentación</a></li>
-                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Blog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-900">Legal</h4>
-                    <ul class="mt-4 space-y-3 text-subtitle">
-                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Privacidad</a></li>
-                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Términos</a></li>
-                    </ul>
-                </div> -->
-            </div>
-            <div class="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row justify-between items-center">
-                <p class="text-gray-500 text-sm">&copy; 2025 LockedInWork. Todos los derechos reservados.</p>
-            </div>
-        </div>
-    </footer>
+        <button id="reservar-btn" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-8 sm:right-8 sm:w-auto z-40 bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-center">Reservar</button>
+        <div id="toast" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-auto z-50 p-4 rounded-lg shadow-xl text-white transition-transform transform translate-x-full sm:translate-x-[120%]" role="alert"><span id="toast-message"></span></div>
+    </div>
 
-    <!-- SCRIPT CORREGIDO -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Script para Menú Móvil ---
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenuPanel = document.getElementById('mobile-menu-panel');
-
-        if (mobileMenuButton && mobileMenuPanel) {
-            mobileMenuButton.addEventListener('click', () => {
-                mobileMenuPanel.classList.toggle('opacity-0');
-                mobileMenuPanel.classList.toggle('pointer-events-none');
-            });
-        }
-
-        // --- Script para efecto de escritura (Typing Effect) ---
-        const words = ["automatización inteligente.", "decisiones con datos.", "experiencias conversacionales."];
-        let i = 0, j = 0, currentWord = "", isDeleting = false;
-        const typingEffectElement = document.getElementById('typing-effect');
-        function type() {
-            if (!typingEffectElement) return;
-            currentWord = words[i];
-            if (isDeleting) {
-                typingEffectElement.textContent = currentWord.substring(0, --j);
-                if (j === 0) {
-                    isDeleting = false;
-                    i = (i + 1) % words.length;
-                }
+        const USERS = { "admin": "clave123", "usuario1": "pass456" };
+        const loginOverlay = document.getElementById('login-overlay');
+        const mainContent = document.getElementById('main-content');
+        const loginForm = document.getElementById('login-form');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (USERS[username] && USERS[username] === password) {
+                loginOverlay.style.display = 'none';
+                mainContent.style.display = 'block';
+                init();
             } else {
-                typingEffectElement.textContent = currentWord.substring(0, ++j);
-                if (j === currentWord.length) {
-                    isDeleting = true;
-                    setTimeout(type, 2000); // Pause at end of word
-                    return;
-                }
+                loginError.classList.remove('hidden');
             }
-            setTimeout(type, isDeleting ? 50 : 50);
-        }
-        type();
-    
-        // --- Script para Acordeón de FAQs ---
-        const faqs = [
-            { question: "¿En qué se diferencian los agentes IA de LockedInWork de los chatbots?", answer: "Los chatbots son útiles para responder preguntas con un arbol de decisión claro. Nuestros agentes responden en base a un razonamiento real, y ejecutan acciones reales en tus sistemas: agenda citas, procesa pagos y actualiza tu CRM. Es un agente activo, no un contestador pasivo." },
-            { question: "¿Qué tan compleja es la implementación?", answer: "Es un proceso sencillo. Tendrás un AI Engineer acompañándote en este proceso; la integración es sencilla, la complejidad estará en que entrenemos en conjunto, de la mejor manera, a los agentes implementados para tus tareas específicas." },
-            { question: "¿Qué se puede integrar?", answer: "Es un catalogo que crece dia a día, pero hoy ya integramos Hubspot y Zendesk, gmail, google calendar, sheets, slack, teams, Whatsapp, Instagram y muchos más." },
-            //{ question: "¿Es seguro para manejar datos sensibles de mi empresa?", answer: "Absolutamente. La seguridad es nuestra máxima prioridad. Cumplimos con los más altos estándares de la industria y te damos control total sobre los permisos y el acceso a los datos." }
-        ];
-        const faqContainer = document.getElementById('faq-container');
-        if (faqContainer) {
-            faqs.forEach(faq => {
-                const faqItem = document.createElement('div');
-                faqItem.className = 'faq-item bg-white border border-gray-200 rounded-lg transition-shadow duration-300 hover:shadow-md';
-                
-                faqItem.innerHTML = `
-                    <div class="faq-question flex justify-between items-center p-6">
-                        <h3 class="text-lg font-semibold text-gray-900">${faq.question}</h3>
-                        <svg class="icon-plus w-6 h-6 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    </div>
-                    <div class="faq-answer"><p class="text-subtitle px-6 pt-2 pb-6">${faq.answer}</p></div>`;
-                
-                faqContainer.appendChild(faqItem);
-            });
-            faqContainer.addEventListener('click', (e) => {
-                const questionHeader = e.target.closest('.faq-question');
-                if (!questionHeader) return;
-                const faqItem = questionHeader.parentElement;
-                const answer = faqItem.querySelector('.faq-answer');
-                const isOpen = faqItem.classList.contains('active');
-                document.querySelectorAll('#faq-container .faq-item.active').forEach(item => {
-                    if (item !== faqItem) {
-                        item.classList.remove('active');
-                        item.querySelector('.faq-answer').style.maxHeight = null;
+        });
+
+        const SHEET_ID = '1f3BMghdIXySvO7IVb0V2xXnYb1mXta4feq-MZQ-iNF0';
+        const GID_CONFIG = '0';
+        const GID_MEDICOS = '1913556286';
+        const URL_CONFIG = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=${GID_CONFIG}`;
+        const URL_MEDICOS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=${GID_MEDICOS}`;
+        const API_RESERVAS_URL = 'https://agentes-liw-n8n.6tpykr.easypanel.host/webhook/a3398cd3-14aa-4a54-9c64-abecb95d88e8';
+        const API_CHECK_URL = 'https://agentes-liw-n8n.6tpykr.easypanel.host/webhook-test/2ef1ad96-a7b2-4669-8a8f-d1874781f147';
+        const API_DELETE_URL = 'https://agentes-liw-n8n.6tpykr.easypanel.host/webhook/delete-reservation';
+
+        const caeSelect = document.getElementById('cae-select');
+        const boxSelect = document.getElementById('box-select');
+        const medicoSelect = document.getElementById('medico-select');
+        const otroMedicoInput = document.getElementById('otro-medico-input');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearEl = document.getElementById('month-year');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const timeSlotsWrapper = document.getElementById('time-slots-wrapper');
+        const selectedDayText = document.getElementById('selected-day-text');
+        const timeSlotsContainer = document.getElementById('time-slots-container-wrapper');
+        const reservarBtn = document.getElementById('reservar-btn');
+        const toastEl = document.getElementById('toast');
+        const toastMessageEl = document.getElementById('toast-message');
+
+        let configData = [];
+        let medicosList = [];
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedTimeSlots = new Set();
+        let selectedBoxForReservation = null;
+        let allOccupiedSlots = new Map();
+
+        const init = async () => {
+            timeSlotsContainer.style.display = 'none';
+            await loadAndPopulateFilters();
+            renderCalendar();
+            setupEventListeners();
+        };
+
+        const fetchSheetData = async (url, requiredColumns) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Error al descargar datos. Revisa la URL y los permisos.`);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                if (jsonData.length > 0) {
+                    for (const col of requiredColumns) {
+                        if (!(col in jsonData[0])) throw new Error(`La columna "${col}" no se encontró en la hoja correspondiente.`);
                     }
-                });
-                faqItem.classList.toggle('active');
-                answer.style.maxHeight = isOpen ? null : answer.scrollHeight + 'px';
+                }
+                return jsonData;
+            } catch (error) {
+                console.error(`Error en fetchSheetData para ${url}:`, error);
+                throw error;
+            }
+        };
+
+        const loadAndPopulateFilters = async () => {
+            try {
+                [configData, medicosList] = await Promise.all([
+                    fetchSheetData(URL_CONFIG, ['cae', 'box', 'calendar_id']),
+                    fetchSheetData(URL_MEDICOS, ['medico'])
+                ]);
+                populateCaeSelect();
+                populateMedicoSelect();
+                showToast('Datos cargados correctamente.', 'success');
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+                showToast(error.message, 'error');
+            }
+        };
+        
+        const populateCaeSelect = () => {
+            const caes = [...new Set(configData.map(item => item.cae))];
+            caeSelect.innerHTML = '<option value="">Selecciona un CAE</option>';
+            caes.sort().forEach(cae => {
+                const option = document.createElement('option');
+                option.value = cae;
+                option.textContent = cae;
+                caeSelect.appendChild(option);
             });
+        };
+
+        const updateBoxSelect = () => {
+            const selectedCae = caeSelect.value;
+            boxSelect.innerHTML = '<option value="">Selecciona un CAE</option>';
+            boxSelect.disabled = true;
+            if (selectedCae) {
+                const boxes = [...new Set(configData.filter(item => String(item.cae).trim() === selectedCae.trim()).map(item => item.box))].sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+                boxSelect.innerHTML = '<option value="all">-- Todos los BOX --</option>';
+                boxes.forEach(box => {
+                    const option = document.createElement('option');
+                    option.value = box;
+                    option.textContent = box;
+                    boxSelect.appendChild(option);
+                });
+                boxSelect.disabled = false;
+            }
+        };
+
+        const fetchAllBoxAvailabilities = async () => {
+            const cae = caeSelect.value;
+            allOccupiedSlots.clear();
+            if (!cae || !selectedDate) return renderAllTimeSlots();
+
+            const boxesForCae = configData.filter(item => String(item.cae).trim() === cae.trim() && item.calendar_id);
+            if (boxesForCae.length === 0) return renderAllTimeSlots();
+
+            timeSlotsWrapper.innerHTML = '<p class="w-full text-center text-slate-500 animate-pulse">Consultando disponibilidad...</p>';
+            const timeMin = new Date(selectedDate); timeMin.setHours(0,0,0,0);
+            const timeMax = new Date(selectedDate); timeMax.setHours(23,59,59,999);
+            const availabilityPromises = boxesForCae.map(async (mapping) => {
+                try {
+                    const response = await fetch(API_CHECK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ calendar_id: mapping.calendar_id, timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString() }) });
+                    if (!response.ok) return { box: mapping.box, occupied: [] };
+                    const data = await response.json();
+                    return { box: mapping.box, occupied: data.occupied || [] };
+                } catch (error) { 
+                    console.error(`Error al consultar disponibilidad para ${mapping.box}:`, error);
+                    return { box: mapping.box, occupied: [] };
+                }
+            });
+            try {
+                const results = await Promise.all(availabilityPromises);
+                results.forEach(result => {
+                    const occupiedMap = result.occupied.reduce((acc, curr) => { 
+                        acc[curr.time] = { eventId: curr.eventId, summary: curr.summary }; 
+                        return acc;
+                    }, {});
+                    allOccupiedSlots.set(result.box, occupiedMap);
+                });
+            } catch (error) { 
+                showToast('Error al consultar la disponibilidad.', 'error');
+            } 
+            finally { 
+                renderAllTimeSlots();
+            }
+        };
+        
+        const renderAllTimeSlots = () => {
+            timeSlotsContainer.style.display = "block";
+            timeSlotsWrapper.innerHTML = "";
+            if (!selectedDate) return selectedDayText.textContent = "Selecciona un CAE y un día en el calendario";
+            
+            selectedDayText.textContent = `Día: ${selectedDate.toLocaleString("es-ES",{weekday:"long",day:"numeric",month:"long"})}`;
+            const cae = caeSelect.value;
+            const boxesForCae = [...new Set(configData.filter(item => String(item.cae).trim() === cae.trim()).map(item => item.box))].sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+            if (boxesForCae.length === 0) return timeSlotsWrapper.innerHTML = '<p class="w-full text-center text-slate-500">No hay boxes configurados.</p>';
+            
+            boxesForCae.forEach(boxName => {
+                const columnDiv = document.createElement("div");
+                columnDiv.className = "box-column";
+                columnDiv.dataset.boxColumn = boxName;
+                columnDiv.innerHTML = `<h4 class="box-title">${boxName}</h4>`;
+                const occupiedForThisBox = allOccupiedSlots.get(boxName) || {};
+                
+                // ** CAMBIO CORREGIDO **
+                const calendarId = configData.find(item => String(item.box).trim() === String(boxName).trim() && String(item.cae).trim() === cae.trim())?.calendar_id;
+                
+                for (let hour = 8; hour < 20; hour++) {
+                    for (let minute = 0; minute < 60; minute += 30) {
+                        const time = `${String(hour).padStart(2,"0")}:${String(minute).padStart(2,"0")}`;
+                        const occupiedInfo = occupiedForThisBox[time];
+
+                        if (occupiedInfo && occupiedInfo.eventId) {
+                            const wrapper = document.createElement("div");
+                            wrapper.className = "slot-occupied-wrapper";
+                            wrapper.innerHTML = `<span class="truncate" title="${occupiedInfo.summary || "Ocupado"}">${occupiedInfo.summary || "Ocupado"}</span><button class="delete-btn" title="Eliminar reserva" data-event-id="${occupiedInfo.eventId}" data-calendar-id="${calendarId}">&times;</button>`;
+                            columnDiv.appendChild(wrapper);
+                        } else {
+                            const slotEl = document.createElement("button");
+                            slotEl.textContent = time;
+                            slotEl.dataset.time = time;
+                            slotEl.dataset.box = boxName;
+                            slotEl.classList.add('p-2', 'rounded-lg', 'transition-all', 'duration-200', 'ease-in-out', 'shadow-sm', 'font-medium', 'text-sm', 'bg-slate-100', 'hover:bg-indigo-200');
+                            if (selectedBoxForReservation === boxName && selectedTimeSlots.has(time)) {
+                                slotEl.classList.add("slot-selected");
+                            }
+                            columnDiv.appendChild(slotEl);
+                        }
+                    }
+                }
+                timeSlotsWrapper.appendChild(columnDiv);
+            });
+            filterBoxView();
+        };
+
+        const handleDeleteClick = async (e) => {
+            const target = e.target.closest('.delete-btn');
+            if (!target) return;
+
+            if (!confirm('¿Estás seguro de que quieres eliminar esta reserva?')) return;
+            
+            const eventId = target.dataset.eventId;
+            const calendarId = target.dataset.calendarId;
+            showToast('Eliminando reserva...', 'info');
+            target.disabled = true;
+            try {
+                const response = await fetch(API_DELETE_URL, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ event_id: eventId, calendar_id: calendarId }) 
+                });
+                if (!response.ok) throw new Error(`El servidor respondió con ${response.status}`);
+                showToast('Reserva eliminada con éxito.', 'success');
+                await fetchAllBoxAvailabilities();
+            } catch (error) { 
+                showToast('Error al eliminar la reserva.', 'error'); 
+                target.disabled = false; 
+            }
+        };
+
+        const setupEventListeners = () => {
+            caeSelect.addEventListener('change', () => { updateBoxSelect(); if (selectedDate) fetchAllBoxAvailabilities(); else { timeSlotsContainer.style.display = 'none'; selectedTimeSlots.clear(); selectedBoxForReservation = null; } });
+            boxSelect.addEventListener('change', filterBoxView);
+            medicoSelect.addEventListener('change', () => { otroMedicoInput.classList.toggle('hidden', medicoSelect.value !== 'otro'); });
+            const changeMonth = (offset) => { currentDate.setMonth(currentDate.getMonth() + offset); renderCalendar(); timeSlotsContainer.style.display = 'none'; selectedDate = null; };
+            prevMonthBtn.addEventListener('click', () => changeMonth(-1));
+            nextMonthBtn.addEventListener('click', () => changeMonth(1));
+            calendarGrid.addEventListener('click', handleDayClick);
+            
+            timeSlotsWrapper.addEventListener('click', (e) => { 
+                if (e.target.closest('.delete-btn')) {
+                    handleDeleteClick(e);
+                } else if (e.target.closest('button[data-time]')) {
+                    handleTimeSlotClick(e);
+                }
+            });
+            reservarBtn.addEventListener('click', handleReserveClick);
+        };
+        
+        const handleDayClick = async (e) => {
+            const target = e.target.closest('button');
+            if (!target || !target.dataset.date) return;
+            if (!caeSelect.value) { showToast('Primero debes seleccionar un CAE.', 'info'); return; }
+            document.querySelectorAll('#calendar-grid button.day-selected').forEach(btn => btn.classList.remove('day-selected'));
+            target.classList.add('day-selected');
+            selectedDate = new Date(target.dataset.date);
+            await fetchAllBoxAvailabilities(); 
+        };
+
+        const handleTimeSlotClick = (e) => {
+            const target = e.target.closest('button');
+            if (!target || !target.dataset.time || target.disabled) return;
+            const time = target.dataset.time;
+            const box = target.dataset.box;
+            if (selectedBoxForReservation && selectedBoxForReservation !== box) {
+                selectedTimeSlots.clear();
+                document.querySelectorAll('.slot-selected').forEach(el => el.classList.remove('slot-selected'));
+            }
+            selectedBoxForReservation = box;
+            if (selectedTimeSlots.has(time)) {
+                selectedTimeSlots.delete(time);
+                target.classList.remove('slot-selected');
+            } else {
+                selectedTimeSlots.add(time);
+                target.classList.add('slot-selected');
+            }
+            if (selectedTimeSlots.size === 0) {
+                selectedBoxForReservation = null;
+            }
+        };
+        
+        const filterBoxView = () => {
+            const selectedBox = boxSelect.value;
+            document.querySelectorAll(".box-column").forEach(column => { "all" === selectedBox || "" === selectedBox ? column.style.display = "flex" : column.style.display = column.dataset.boxColumn === selectedBox ? "flex" : "none" });
+        };
+        
+        const getSantiagoOffset = (date) => {
+            const year = date.getFullYear();
+            const firstOfSep = new Date(year, 8, 1);
+            const firstSaturdaySep = new Date(firstOfSep);
+            firstSaturdaySep.setDate(1 + (6 - firstOfSep.getDay() + 7) % 7);
+            firstSaturdaySep.setHours(23, 59, 59);
+            const firstOfApr = new Date(year, 3, 1);
+            const firstSaturdayApr = new Date(firstOfApr);
+            firstSaturdayApr.setDate(1 + (6 - firstOfApr.getDay() + 7) % 7);
+            firstSaturdayApr.setHours(23, 59, 59);
+            return date >= firstSaturdaySep || date < firstSaturdayApr ? '-03:00' : '-04:00';
+        };
+
+        const formatToISOWithOffset = (date, time) => {
+            const [hours, minutes] = time.split(':');
+            const dateWithTime = new Date(date);
+            dateWithTime.setHours(hours, minutes, 0, 0);
+            const year = dateWithTime.getFullYear();
+            const month = String(dateWithTime.getMonth() + 1).padStart(2, '0');
+            const day = String(dateWithTime.getDate()).padStart(2, '0');
+            const offset = getSantiagoOffset(dateWithTime);
+            return `${year}-${month}-${day}T${time}:00${offset}`;
+        };
+
+        async function handleReserveClick() {
+            const cae = caeSelect.value;
+            const box = selectedBoxForReservation;
+            let medico = medicoSelect.value;
+            const otroMedico = otroMedicoInput.value.trim();
+            if (medico === 'otro') {
+                if (!otroMedico) return showToast('Por favor, ingresa el nombre del nuevo médico.', 'error');
+                medico = otroMedico;
+            }
+            if (!cae || !box || !medico || !selectedDate || selectedTimeSlots.size === 0) {
+                return showToast('Completa todos los filtros y selecciona un horario.', 'error');
+            }
+            const calendarMapping = configData.find(item => String(item.cae).trim() === cae.trim() && String(item.box).trim() === box.trim());
+            if (!calendarMapping) return showToast('Error: No se encontró calendario.', 'error');
+
+            await fetchAllBoxAvailabilities();
+            const slotsArray = Array.from(selectedTimeSlots);
+            const occupiedSlotsForThisBox = allOccupiedSlots.get(box) || {};
+            const alreadyReserved = slotsArray.some(slot => occupiedSlotsForThisBox[slot]);
+
+            if (alreadyReserved) {
+                showToast('¡Conflicto! Uno de los horarios fue ocupado. Por favor, selecciona otros.', 'error');
+                selectedTimeSlots.clear();
+                selectedBoxForReservation = null;
+                renderAllTimeSlots();
+                return;
+            }
+
+            const calendarId = calendarMapping.calendar_id;
+            const reservas = slotsArray.sort().map(time => {
+                const [hours, minutes] = time.split(':').map(Number);
+                const fechaInicio = new Date(selectedDate);
+                fechaInicio.setHours(hours, minutes, 0, 0);
+                const fechaFin = new Date(fechaInicio);
+                fechaFin.setMinutes(fechaInicio.getMinutes() + 30);
+                return {
+                    fecha_inicio: formatToISOWithOffset(selectedDate, time),
+                    fecha_fin: formatToISOWithOffset(selectedDate, `${String(fechaFin.getHours()).padStart(2, '0')}:${String(fechaFin.getMinutes()).padStart(2, '0')}`)
+                };
+            });
+
+            const payload = { cae, box, medico, nuevo_medico: medicoSelect.value === 'otro', calendar_id: calendarId, reservas };
+            
+            reservarBtn.disabled = true;
+            reservarBtn.textContent = 'Reservando...';
+            showToast('Enviando reserva...', 'info');
+
+            try {
+                const response = await fetch(API_RESERVAS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`El servidor respondió con ${response.status}`);
+                showToast('¡Reserva realizada con éxito!', 'success');
+                resetForm();
+            } catch (error) {
+                console.error('Error al enviar la reserva:', error);
+                showToast('Error al enviar la reserva. Intenta de nuevo.', 'error');
+            } finally {
+                reservarBtn.disabled = false;
+                reservarBtn.textContent = 'Reservar';
+            }
         }
+
+        const showToast=(e,t="info")=>{toastMessageEl.textContent=e;const o=window.innerWidth<640,n=o?"translateX(100%)":"translateX(120%)";toastEl.classList.remove("bg-green-500","bg-red-500","bg-blue-500"),o?(toastEl.classList.remove("translate-x-[120%]"),toastEl.classList.add("translate-x-full")):(toastEl.classList.remove("translate-x-full"),toastEl.classList.add("translate-x-[120%]"));const s={success:"bg-green-500",error:"bg-red-500",info:"bg-blue-500"};toastEl.classList.add(s[t]),toastEl.style.transform="translateX(0)",setTimeout(()=>{toastEl.style.transform=n},4e3)};
+        const resetForm=()=>{caeSelect.value="",updateBoxSelect(),medicoSelect.value="",otroMedicoInput.value="",otroMedicoInput.classList.add("hidden"),selectedDate=null,selectedTimeSlots.clear(),selectedBoxForReservation=null,allOccupiedSlots.clear(),timeSlotsContainer.style.display="none",document.querySelectorAll("#calendar-grid button.day-selected").forEach(e=>e.classList.remove("day-selected"))};
+        function populateMedicoSelect(){medicoSelect.innerHTML='<option value="">Selecciona un Médico</option>',medicosList.forEach(item=>{const e=document.createElement("option");e.value=item.medico,e.textContent=item.medico,medicoSelect.appendChild(e)});const e=document.createElement("option");e.value="otro",e.textContent="Otro / Agregar médico...",medicoSelect.appendChild(e),medicoSelect.disabled=!1}
+        function renderCalendar(){calendarGrid.innerHTML='<div class="font-medium text-xs text-slate-500">LU</div><div class="font-medium text-xs text-slate-500">MA</div><div class="font-medium text-xs text-slate-500">MI</div><div class="font-medium text-xs text-slate-500">JU</div><div class="font-medium text-xs text-slate-500">VI</div><div class="font-medium text-xs text-slate-500">SA</div><div class="font-medium text-xs text-slate-500">DO</div>';const e=currentDate.getFullYear(),t=currentDate.getMonth();monthYearEl.textContent=currentDate.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).replace(/^\w/,e=>e.toUpperCase());const o=new Date(e,t,1),n=new Date(e,t+1,0).getDate(),s=(o.getDay()+6)%7;for(let r=0;r<s;r++)calendarGrid.appendChild(document.createElement("div"));for(let a=1;a<=n;a++){const c=document.createElement("button");c.textContent=a,c.classList.add('p-1','sm:p-2','rounded-full','hover:bg-slate-100','transition','cursor-pointer','w-full','aspect-square','flex','items-center','justify-center','mx-auto','text-sm');const i=new Date;e===i.getFullYear()&&t===i.getMonth()&&a===i.getDate()&&c.classList.add('bg-slate-200','font-bold'),c.dataset.date=new Date(e,t,a).toISOString(),calendarGrid.appendChild(c)}};
+        
     });
     </script>
-<!-- Prueba de despliegue automático -->
 </body>
 </html>
